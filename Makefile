@@ -7,7 +7,7 @@ all: rm def
 rm:
 	rm ./bin/* 2>/dev/null || true
 
-server: server.srt server.key
+server: server.crt server.key
 	go build -o ./bin/$@ ./cmd/$@
 
 client: ca.crt
