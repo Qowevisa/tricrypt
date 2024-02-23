@@ -21,7 +21,7 @@ func main() {
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
 	// config.Rand = rand.Reader
 
-	url := fmt.Sprintf("chat.qowevisa.md:%d", env.ConnectPort)
+	url := fmt.Sprintf("chat.qowevisa.me:%d", env.ConnectPort)
 	// Dial a TLS connection
 	conn, err := tls.Dial("tcp", url, &config)
 	if err != nil {
