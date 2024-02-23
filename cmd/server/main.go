@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	// "crypto/rand"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -27,39 +26,28 @@ func main() {
 		log.Fatalf("server: loadkeys: %s", err)
 	}
 	config := tls.Config{Certificates: []tls.Certificate{cert}}
+	host, err := env.GetHost()
+	if err != nil {
+		panic(err)
+	}
+	port, err := env.GetPort()
+	if err != nil {
+		panic(err)
+	}
 	srv := http.Server{
-		Addr:         fmt.Sprintf("127.0.0.1:%d", env.Port),
+		Addr:         fmt.Sprintf("%s:%d", host, port),
 		TLSConfig:    &config,
 		ReadTimeout:  time.Minute,
 		WriteTimeout: time.Minute,
+		Handler:      http.HandlerFunc(handle),
 	}
-	srv.Handler = http.HandlerFunc(handle)
+	log.Printf("Start http server on %s:%d\n", host, port)
 	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 		os.Exit(1)
 	}
 	defer srv.Close()
-	// listener, err := tls.Listen("tcp", url, &config)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer listener.Close()
-
-	// fmt.Println("Server is listening on port 8080")
-	//
-	// for {
-	// 	// Wait for a connection.
-	// 	conn, err := srv.Accept()
-	// 	if err != nil {
-	// 		log.Print(err)
-	// 		continue
-	// 	}
-	// 	// Handle the connection in a new goroutine.
-	// 	// The loop then returns to accepting, so that
-	// 	// multiple connections may be served concurrently.
-	// 	go handleConnection(conn)
-	// }
 }
 
 func handleConnection(conn net.Conn) {
