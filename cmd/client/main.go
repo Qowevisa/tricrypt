@@ -33,8 +33,9 @@ func main() {
 	if !ok {
 		log.Fatal("failed to parse root certificate")
 	}
-	config := &tls.Config{RootCAs: roots, ServerName: "localhost"}
+	config := &tls.Config{RootCAs: roots, ServerName: "my-server"}
 
+	log.Printf("Trying to dial %s:%d\n", host, port)
 	connp, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		log.Fatal(err)

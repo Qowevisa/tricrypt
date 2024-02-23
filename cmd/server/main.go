@@ -36,6 +36,7 @@ func main() {
 	config := &tls.Config{Certificates: []tls.Certificate{cer}}
 	//
 
+	log.Printf("Serving on %s:%d\n", host, port)
 	l, err := tls.Listen("tcp", fmt.Sprintf("%s:%d", host, port), config)
 	if err != nil {
 		log.Fatal(err)
