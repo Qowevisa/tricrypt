@@ -1,32 +1,48 @@
 package main
 
 import (
-	"bufio"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
 
 	"git.qowevisa.me/Qowevisa/gotell/env"
 )
 
 func main() {
-	url := fmt.Sprintf("chat.qowevisa.me:%d", env.ConnectPort)
-	conn, err := tls.Dial("tcp", url, &tls.Config{
-		InsecureSkipVerify: false, // Set to true if using self-signed certificates
-	})
+	caCert, err := os.ReadFile("ca.crt")
 	if err != nil {
-		log.Fatalf("Failed to dial: %v", err)
+		log.Fatalf("Reading CA cert file: %s", err)
 	}
-	defer conn.Close()
 
-	reader := bufio.NewScanner(os.Stdin)
-	for reader.Scan() {
-		text := reader.Text()
-		_, err := conn.Write([]byte(text + "\n"))
-		if err != nil {
-			log.Printf("Write error: %v", err)
-			break
-		}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig := &tls.Config{
+		RootCAs: caCertPool,
 	}
+
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
+	url := fmt.Sprintf("https://chat.qowevisa.me:%d", env.ConnectPort)
+	response, err := client.Get(url)
+	if err != nil {
+		log.Fatalf("Failed to request: %s", err)
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("Failed to read response: %s", err)
+	}
+
+	log.Printf("Server response: %s", body)
 }
+
