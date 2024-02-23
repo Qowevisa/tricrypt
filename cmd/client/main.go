@@ -6,43 +6,41 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
+	"net"
 	"os"
 
 	"git.qowevisa.me/Qowevisa/gotell/env"
 )
 
 func main() {
-	caCert, err := os.ReadFile("ca.crt")
+	host, err := env.GetHost()
 	if err != nil {
-		log.Fatalf("Reading CA cert file: %s", err)
+		panic(err)
 	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-
-	tlsConfig := &tls.Config{
-		RootCAs: caCertPool,
-	}
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: tlsConfig,
-		},
-	}
-
-	url := fmt.Sprintf("https://chat.qowevisa.me:%d", env.ConnectPort)
-	response, err := client.Get(url)
+	port, err := env.GetPort()
 	if err != nil {
-		log.Fatalf("Failed to request: %s", err)
+		panic(err)
 	}
-	defer response.Body.Close()
-
-	body, err := io.ReadAll(response.Body)
+	//
+	rootCert, err := os.ReadFile("./server.pem")
 	if err != nil {
-		log.Fatalf("Failed to read response: %s", err)
+		panic(err)
+	}
+	//
+
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM(rootCert)
+	if !ok {
+		log.Fatal("failed to parse root certificate")
+	}
+	config := &tls.Config{RootCAs: roots, ServerName: "localhost"}
+
+	connp, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	log.Printf("Server response: %s", body)
+	conn := tls.Client(connp, config)
+	io.WriteString(conn, "Hello secure Server")
+	conn.Close()
 }
-

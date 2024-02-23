@@ -13,6 +13,10 @@ server: server.crt server.key
 client: ca.crt
 	go build -o ./bin/$@ ./cmd/$@
 
+gen_test_certs:
+	openssl ecparam -genkey -name prime256v1 -out server.key
+	openssl req -new -x509 -key server.key -out server.pem -days 3650
+
 gen_certs:
 	openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -config san.cnf
 	#openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
