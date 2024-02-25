@@ -29,7 +29,9 @@ func main() {
 		log.Fatalf("client: failed to parse root certificate")
 	}
 
-	config := &tls.Config{RootCAs: roots, ServerName: host}
+	config := &tls.Config{
+		RootCAs: roots,
+	}
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
 	if err != nil {
 		log.Fatalf("client: dial: %s", err)
