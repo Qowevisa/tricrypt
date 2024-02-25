@@ -20,10 +20,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cert, err := os.ReadFile("server.pem")
+	loadingFileName := env.ServerFullchainFileName
+	cert, err := os.ReadFile(loadingFileName)
 	if err != nil {
 		log.Fatalf("client: load root cert: %s", err)
 	}
+	log.Printf("Certificate %s loaded successfully!\n", loadingFileName)
+	//
 	roots := x509.NewCertPool()
 	if ok := roots.AppendCertsFromPEM(cert); !ok {
 		log.Fatalf("client: failed to parse root certificate")
