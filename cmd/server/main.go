@@ -1,12 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"os"
 
 	"git.qowevisa.me/Qowevisa/gotell/env"
 )
@@ -20,39 +20,50 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	//
-	serverCert, err := os.ReadFile("./server.pem")
-	if err != nil {
-		log.Fatal(err)
-	}
-	serverKey, err := os.ReadFile("./server.key")
-	if err != nil {
-		log.Fatal(err)
-	}
-	cer, err := tls.X509KeyPair(serverCert, serverKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-	config := &tls.Config{Certificates: []tls.Certificate{cer}}
-	//
 
-	log.Printf("Serving on %s:%d\n", host, port)
-	l, err := tls.Listen("tcp", fmt.Sprintf("%s:%d", host, port), config)
+	cert, err := tls.LoadX509KeyPair("server.pem", "server.key")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("server: loadkeys: %s", err)
 	}
-	defer l.Close()
+	config := tls.Config{Certificates: []tls.Certificate{cert}, ClientAuth: tls.NoClientCert}
+	config.Rand = rand.Reader
+
+	service := fmt.Sprintf("%s:%d", host, port)
+	listener, err := tls.Listen("tcp", service, &config)
+	if err != nil {
+		log.Fatalf("server: listen: %s", err)
+	}
+	log.Printf("server: listening on %s", service)
 
 	for {
-		conn, err := l.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("server: accept: %s", err)
+			break
 		}
-		go func(c net.Conn) {
-			log.Printf("Get connection: %#v\n", c)
-			io.Copy(os.Stdout, c)
-			fmt.Println()
-			c.Close()
-		}(conn)
+		log.Printf("server: accepted from %s", conn.RemoteAddr())
+		go handleClient(conn)
 	}
+}
+
+func handleClient(conn net.Conn) {
+	defer conn.Close()
+	buf := make([]byte, 512)
+	for {
+		log.Print("server: conn: waiting")
+		n, err := conn.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("server: conn: read: %s", err)
+			}
+			break
+		}
+		log.Printf("server: conn: echo %q\n", string(buf[:n]))
+		_, err = conn.Write(buf[:n])
+		if err != nil {
+			log.Printf("server: conn: write: %s", err)
+			break
+		}
+	}
+	log.Println("server: conn: closed")
 }

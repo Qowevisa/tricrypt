@@ -4,9 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"os"
 
 	"git.qowevisa.me/Qowevisa/gotell/env"
@@ -15,33 +13,46 @@ import (
 func main() {
 	host, err := env.GetHost()
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	port, err := env.GetPort()
-	if err != nil {
-		panic(err)
-	}
-	//
-	rootCert, err := os.ReadFile("./server.pem")
-	if err != nil {
-		panic(err)
-	}
-	//
-
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(rootCert)
-	if !ok {
-		log.Fatal("failed to parse root certificate")
-	}
-	config := &tls.Config{RootCAs: roots, ServerName: "my-server"}
-
-	log.Printf("Trying to dial %s:%d\n", host, port)
-	connp, err := net.Dial("tcp", fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	conn := tls.Client(connp, config)
-	io.WriteString(conn, "Hello secure Server")
-	conn.Close()
+	cert, err := os.ReadFile("server.pem")
+	if err != nil {
+		log.Fatalf("client: load root cert: %s", err)
+	}
+	roots := x509.NewCertPool()
+	if ok := roots.AppendCertsFromPEM(cert); !ok {
+		log.Fatalf("client: failed to parse root certificate")
+	}
+
+	config := &tls.Config{RootCAs: roots, ServerName: host}
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
+	if err != nil {
+		log.Fatalf("client: dial: %s", err)
+	}
+	defer conn.Close()
+
+	log.Println("client: connected to: ", conn.RemoteAddr())
+
+	message := "Hello secure Server\n"
+	n, err := conn.Write([]byte(message))
+	if err != nil {
+		log.Fatalf("client: write: %s", err)
+	}
+
+	log.Printf("client: wrote %q (%d bytes)", message, n)
+
+	reply := make([]byte, 256)
+	n, err = conn.Read(reply)
+	if err != nil {
+		log.Fatalf("client: read: %s", err)
+	}
+
+	log.Printf("client: read %q (%d bytes)", string(reply[:n]), n)
+
+	log.Print("client: exiting")
 }
