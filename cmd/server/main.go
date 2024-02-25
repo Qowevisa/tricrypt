@@ -21,7 +21,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cert, err := tls.LoadX509KeyPair("server.pem", "server.key")
+	cert, err := tls.LoadX509KeyPair(
+		env.ServerFullchainFileName,
+		env.ServerPrivKeyFileName,
+	)
 	if err != nil {
 		log.Fatalf("server: loadkeys: %s", err)
 	}
