@@ -49,6 +49,7 @@ func main() {
 			log.Fatal(err)
 		}
 		go func(c net.Conn) {
+			log.Printf("Get connection: %#v\n", c)
 			io.Copy(os.Stdout, c)
 			fmt.Println()
 			c.Close()
