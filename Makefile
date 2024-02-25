@@ -7,10 +7,10 @@ all: rm def
 rm:
 	rm ./bin/* 2>/dev/null || true
 
-server: server.crt server.key
+server:
 	go build -o ./bin/$@ ./cmd/$@
 
-client: ca.crt
+client:
 	go build -o ./bin/$@ ./cmd/$@
 
 gen_test_certs:
