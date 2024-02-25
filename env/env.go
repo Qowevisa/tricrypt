@@ -7,11 +7,6 @@ import (
 	"git.qowevisa.me/Qowevisa/gotell/errors"
 )
 
-const (
-	Port        = 2993
-	ConnectPort = 443
-)
-
 func GetHost() (string, error) {
 	host := os.Getenv("GOTELL_HOST")
 	if host == "" {
