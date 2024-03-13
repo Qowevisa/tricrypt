@@ -62,7 +62,8 @@ func handleClient(conn net.Conn) {
 			break
 		}
 		log.Printf("server: conn: echo %q\n", string(buf[:n]))
-		_, err = conn.Write(buf[:n])
+		answer := append([]byte("Hello! I see your message:"), buf[:n]...)
+		_, err = conn.Write(answer)
 		if err != nil {
 			log.Printf("server: conn: write: %s", err)
 			break
