@@ -26,3 +26,4 @@ go.work
 *.key
 *.crt
 bin
+*.log
