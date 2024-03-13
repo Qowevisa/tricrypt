@@ -99,6 +99,7 @@ type TUI struct {
 	readInputState   chan (bool)
 	readEnterState   chan (bool)
 	stateChannel     chan (string)
+	messageChannel   chan ([]byte)
 	widgets          []*widget
 	widgetsMutext    sync.Mutex
 	writer           *bufio.Writer
