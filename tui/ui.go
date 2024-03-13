@@ -144,8 +144,8 @@ func (t *TUI) Run() error {
 	return nil
 }
 
-func (t *TUI) createNotification(text string) {
-	notifier, err := createNotification(text)
+func (t *TUI) createNotification(text, title string) {
+	notifier, err := createNotification(text, title)
 	t.selectedNotifier = &notifier
 	t.errors <- err
 	t.errors <- t.write(notifier.Buf)
@@ -159,7 +159,7 @@ func (t *TUI) setRoutines() error {
 	go func() {
 		for err := range t.errors {
 			if err != nil {
-				t.createNotification(err.Error())
+				t.createNotification(err.Error(), CONST_ERROR_N_TITLE)
 			}
 		}
 	}()
@@ -183,6 +183,7 @@ func (t *TUI) setRoutines() error {
 	}
 	go func() {
 		for message := range t.messageChannel {
+			t.createNotification(string(message), "Message!")
 		}
 	}()
 	go func() {

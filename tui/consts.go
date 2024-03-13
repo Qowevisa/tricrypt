@@ -13,6 +13,11 @@ const (
 )
 
 const (
+	CONST_MESSAGE_LEN   = 1024
+	CONST_ERROR_N_TITLE = "ERROR"
+)
+
+const (
 	footerStart = "State: "
 )
 

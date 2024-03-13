@@ -18,8 +18,7 @@ func centerText(width int, text string) string {
 	)
 }
 
-func createNotification(message string) (notifier, error) {
-	title := "ERROR"
+func createNotification(message, title string) (notifier, error) {
 	var buf string
 	width, height := UI.getSizes()
 	if width == 0 {
