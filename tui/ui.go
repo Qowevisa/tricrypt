@@ -243,9 +243,6 @@ func (t *TUI) setRoutines() error {
 					readInputMu.Lock()
 					readInput = true
 					readInputMu.Unlock()
-				case 't':
-					t.createNotification("some notify")
-					readEnter = true
 				}
 
 				readCommand = false
