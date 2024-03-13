@@ -27,6 +27,7 @@ func (t *TUI) init() error {
 	t.readInputState = make(chan bool, 1)
 	t.readEnterState = make(chan bool, 1)
 	t.stateChannel = make(chan string, 1)
+	t.messageChannel = make(chan []byte, 8)
 	signal.Notify(t.osSignals, syscall.SIGWINCH)
 	err = t.setSizes()
 	if err != nil {
@@ -177,6 +178,13 @@ func (t *TUI) setRoutines() error {
 	if t.stateChannel == nil {
 		return errors.WrapErr("t.stateChannel", errors.NOT_INIT)
 	}
+	if t.messageChannel == nil {
+		return errors.WrapErr("t.messageChannel", errors.NOT_INIT)
+	}
+	go func() {
+		for message := range t.messageChannel {
+		}
+	}()
 	go func() {
 		for state := range t.stateChannel {
 			t.writeMu.Lock()
