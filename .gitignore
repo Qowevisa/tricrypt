@@ -27,3 +27,4 @@ go.work
 *.crt
 bin
 *.log
+*.tar.gz
