@@ -81,6 +81,7 @@ func FE_ConnectTLS(t *TUI, data dataT) error {
 	}
 	t.stateChannel <- "TLS Connected"
 	t.isConnected = true
+	go t.launchReadingMessagesFromConnection()
 	return nil
 }
 
