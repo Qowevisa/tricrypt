@@ -138,6 +138,15 @@ func (t *TUI) Run() error {
 					t.errors <- errors.WrapErr("t.drawSelectedWidget", err)
 				}
 			}
+
+		case MY_SIGNAL_CLOSE:
+			if t.isConnected {
+				CloseConnection(t.tlsConnCloseData.wg, t.tlsConnCloseData.cancel)
+				t.isConnected = false
+				t.errors <- t.tlsConnection.Close()
+				t.stateChannel <- "Disconnected"
+			}
+		default:
 		}
 	}
 	//
@@ -239,12 +248,18 @@ func (t *TUI) setRoutines() error {
 						Type: MY_SIGNAL_EXIT,
 					}
 				case 'c':
-					t.mySignals <- mySignal{
-						Type: MY_SIGNAL_CONNECT,
+					if t.isConnected {
+						t.mySignals <- mySignal{
+							Type: MY_SIGNAL_CLOSE,
+						}
+					} else {
+						t.mySignals <- mySignal{
+							Type: MY_SIGNAL_CONNECT,
+						}
+						readInputMu.Lock()
+						readInput = true
+						readInputMu.Unlock()
 					}
-					readInputMu.Lock()
-					readInput = true
-					readInputMu.Unlock()
 				case 'm':
 					t.mySignals <- mySignal{
 						Type: MY_SIGNAL_MESSAGE,

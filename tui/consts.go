@@ -4,6 +4,7 @@ const (
 	MY_SIGNAL_EXIT = iota
 	MY_SIGNAL_MESSAGE
 	MY_SIGNAL_CONNECT
+	MY_SIGNAL_CLOSE
 )
 
 const (

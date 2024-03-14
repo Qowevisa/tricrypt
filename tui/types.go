@@ -2,6 +2,7 @@ package tui
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"os"
 	"sync"
@@ -83,6 +84,11 @@ type widgetConfig struct {
 	FinaleData      dataT
 }
 
+type closeData struct {
+	wg     *sync.WaitGroup
+	cancel context.CancelFunc
+}
+
 type TUI struct {
 	width            int
 	height           int
@@ -108,4 +114,5 @@ type TUI struct {
 	selectedNotifier *notifier
 	storage          map[string]string
 	tlsConnection    *tls.Conn
+	tlsConnCloseData closeData
 }

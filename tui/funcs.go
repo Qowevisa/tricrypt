@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"sync"
 
 	"git.qowevisa.me/Qowevisa/gotell/env"
 	"git.qowevisa.me/Qowevisa/gotell/errors"
@@ -74,15 +76,26 @@ func FE_ConnectTLS(t *TUI, data dataT) error {
 	if err != nil {
 		return errors.WrapErr("tls.Dial", err)
 	}
-	// log.Printf("Set connection to %#v\n", conn)
 	t.tlsConnection = conn
 	if t.stateChannel == nil {
 		return errors.WrapErr("t.stateChannel", errors.NOT_INIT)
 	}
 	t.stateChannel <- "TLS Connected"
 	t.isConnected = true
-	go t.launchReadingMessagesFromConnection()
+	ctx, cancel := context.WithCancel(context.Background())
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	t.tlsConnCloseData = closeData{
+		wg:     wg,
+		cancel: cancel,
+	}
+	go t.launchReadingMessagesFromConnection(ctx, wg)
 	return nil
+}
+
+func CloseConnection(wg *sync.WaitGroup, cancel context.CancelFunc) {
+	cancel()
+	wg.Wait()
 }
 
 func AddToStorageEasy(key string, val *[]rune) (dataProcessHandler, dataT) {
