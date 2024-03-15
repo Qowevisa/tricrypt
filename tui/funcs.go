@@ -68,19 +68,21 @@ func FE_ConnectTLS(t *TUI, data dataT) error {
 	config := &tls.Config{
 		RootCAs: roots,
 	}
+	if t.stateChannel == nil {
+		return errors.WrapErr("t.stateChannel", errors.NOT_INIT)
+	}
+	t.stateChannel <- "TLS Connecting"
 	conn, err := tls.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", host, int(port)),
 		config,
 	)
 	if err != nil {
+		t.stateChannel <- "TLS Connection error"
 		return errors.WrapErr("tls.Dial", err)
 	}
+	t.stateChannel <- "TLS Established"
 	t.tlsConnection = conn
-	if t.stateChannel == nil {
-		return errors.WrapErr("t.stateChannel", errors.NOT_INIT)
-	}
-	t.stateChannel <- "TLS Connected"
 	t.isConnected = true
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := &sync.WaitGroup{}
