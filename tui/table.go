@@ -1,7 +1,7 @@
 package tui
 
 const (
-	CTRL_A = 1 << iota
+	CTRL_A = 1 + iota
 	CTRL_B
 	CTRL_C
 	CTRL_D
