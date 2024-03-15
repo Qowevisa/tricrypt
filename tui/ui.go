@@ -200,9 +200,10 @@ func (t *TUI) setRoutines() error {
 		for state := range t.stateChannel {
 			t.writeMu.Lock()
 			oldRow, oldCol := t.getCursorPos()
-			t.moveCursor(t.height, len(footerStart)+1)
-			t.write(state)
-			t.moveCursor(oldRow, oldCol)
+			t.errors <- t.moveCursor(t.height, len(footerStart)+1)
+			t._clearLine()
+			t.errors <- t.write(state)
+			t.errors <- t.moveCursor(oldRow, oldCol)
 			t.writeMu.Unlock()
 		}
 	}()
@@ -453,6 +454,10 @@ func (t *TUI) writeRune(r rune) error {
 
 func (t *TUI) getCursorPos() (int, int) {
 	return t.cursorPosRow, t.cursorPosCol
+}
+
+func (t *TUI) _clearLine() {
+	t.errors <- t.write("\033[0K")
 }
 
 func (t *TUI) moveCursor(row, col int) error {
