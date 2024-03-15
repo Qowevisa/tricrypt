@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"unicode"
 
+	"git.qowevisa.me/Qowevisa/gotell/debug"
 	"git.qowevisa.me/Qowevisa/gotell/errors"
 	"golang.org/x/term"
 )
@@ -209,6 +210,7 @@ func (t *TUI) setRoutines() error {
 	var readEnterdMu sync.Mutex
 	readInput := false
 	readCommand := false
+	readDebug := false
 	readEnter := false
 	go func() {
 		for newState := range t.readInputState {
@@ -240,6 +242,16 @@ func (t *TUI) setRoutines() error {
 					}
 					continue
 				}
+			}
+			if readDebug {
+				log.Printf("Reading debug")
+				switch r {
+				case 'm':
+					log.Printf("get m for debug")
+					debug.LogMemUsage()
+				}
+				readDebug = false
+				continue
 			}
 			if readCommand {
 				switch r {
@@ -276,7 +288,11 @@ func (t *TUI) setRoutines() error {
 			if unicode.IsControl(r) {
 				switch r {
 				case CTRL_A:
+					log.Printf("CTRL_A received!\n")
 					readCommand = true
+				case CTRL_D:
+					log.Printf("CTRL_D received!\n")
+					readDebug = true
 				}
 			} else {
 				if readInput {
