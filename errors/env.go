@@ -13,6 +13,7 @@ var (
 	OUT_OF_BOUND = errors.New("Out of bound")
 	NOT_SET      = errors.New("Is not set")
 	ALREADY_SET  = errors.New("Already set")
+	NOT_FOUND    = errors.New("Was not found")
 )
 
 func WrapErr(context string, err error) error {
