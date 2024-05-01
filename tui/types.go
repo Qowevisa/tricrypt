@@ -60,6 +60,15 @@ type notifier struct {
 	Buf    string
 }
 
+type dialog struct {
+	Row     int
+	Col     int
+	Width   int
+	Height  int
+	Buf     string
+	Catcher RuneCatcher
+}
+
 type widgetDraw struct {
 	Buf string
 	Row int
@@ -89,6 +98,8 @@ type closeData struct {
 	cancel context.CancelFunc
 }
 
+type RuneCatcher func(runes chan (rune)) error
+
 type TUI struct {
 	width            int
 	height           int
@@ -97,11 +108,12 @@ type TUI struct {
 	writeMu          sync.Mutex
 	sizeMutex        sync.Mutex
 	oldState         *term.State
-	input            chan (rune)
+	inputChannel     chan (rune)
+	inputCatcher     RuneCatcher
 	printRunes       chan (rune)
 	mySignals        chan (mySignal)
 	osSignals        chan (os.Signal)
-	errors           chan (error)
+	errorsChannel    chan (error)
 	readInputState   chan (bool)
 	readEnterState   chan (bool)
 	stateChannel     chan (string)

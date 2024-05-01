@@ -5,6 +5,10 @@ const (
 	MY_SIGNAL_MESSAGE
 	MY_SIGNAL_CONNECT
 	MY_SIGNAL_CLOSE
+	MY_SIGNAL_MOVE_CURSOR_UP
+	MY_SIGNAL_MOVE_CURSOR_DOWN
+	MY_SIGNAL_MOVE_CURSOR_LEFT
+	MY_SIGNAL_MOVE_CURSOR_RIGHT
 )
 
 const (
@@ -22,8 +26,8 @@ const (
 	footerStart = "State: "
 )
 
-func (c *cursorPosConfigValue) isGeneral() bool {
-	switch *c {
+func (c cursorPosConfigValue) isGeneral() bool {
+	switch c {
 	case cursorPosGeneralCenter:
 		return true
 	case cursorPosGeneralLeft:
@@ -40,8 +44,8 @@ const (
 	widgetPosGeneralRightCenter widgetPosConfigValue = -3
 )
 
-func (w *widgetPosConfigValue) isGeneral() bool {
-	switch *w {
+func (w widgetPosConfigValue) isGeneral() bool {
+	switch w {
 	case widgetPosGeneralCenter:
 		return true
 	case widgetPosGeneralLeftCenter:

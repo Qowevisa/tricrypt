@@ -17,10 +17,10 @@ import (
 
 func (t *TUI) init() error {
 	var err error
-	t.input = make(chan rune, 32)
+	t.inputChannel = make(chan rune, 32)
 	t.printRunes = make(chan rune, 32)
 	t.widgets = make([]*widget, 8)
-	t.errors = make(chan error, 4)
+	t.errorsChannel = make(chan error, 4)
 	t.mySignals = make(chan mySignal, 1)
 	t.osSignals = make(chan os.Signal, 1)
 	t.writer = bufio.NewWriter(os.Stdout)
@@ -46,6 +46,10 @@ func (t *TUI) init() error {
 	if err != nil {
 		return errors.WrapErr("t.readRoutines", err)
 	}
+	err = t.launchAllChannels()
+	if err != nil {
+		return errors.WrapErr("t.launchAllChannels", err)
+	}
 	return nil
 }
 
@@ -64,7 +68,7 @@ func (t *TUI) Run() error {
 	}
 	//
 	if t.mySignals == nil {
-		return errors.WrapErr("t.signals", errors.NOT_INIT)
+		return errors.WrapErr("t.mySignals", errors.NOT_INIT)
 	}
 	err = t.Draw()
 	if err != nil {
@@ -73,8 +77,8 @@ func (t *TUI) Run() error {
 	for mySignal := range t.mySignals {
 		log.Printf("Receive signal: %#v\n", mySignal)
 		if mySignal.Type == MY_SIGNAL_EXIT {
-			t.errors <- t.clearScreen()
-			t.errors <- t.moveCursor(0, 0)
+			t.errorsChannel <- t.clearScreen()
+			t.errorsChannel <- t.moveCursor(0, 0)
 			break
 		}
 		switch mySignal.Type {
@@ -108,43 +112,23 @@ func (t *TUI) Run() error {
 				},
 			})
 			if err != nil {
-				t.errors <- errors.WrapErr("t.addWidget", err)
+				t.errorsChannel <- errors.WrapErr("t.addWidget", err)
 			}
 			err = t.drawSelectedWidget()
 			if err != nil {
-				t.errors <- errors.WrapErr("t.drawSelectedWidget", err)
+				t.errorsChannel <- errors.WrapErr("t.drawSelectedWidget", err)
 			}
 
 		case MY_SIGNAL_MESSAGE:
 			if t.isConnected {
-				var msg []rune
-				h, d := SendMessageToConnectionEasy(&msg)
-				err := t.addWidget(widgetConfig{
-					Input:           &msg,
-					Title:           "Message",
-					MinWidth:        20,
-					HasBorder:       true,
-					WidgetPosConfig: widgetPosGeneralCenter,
-					CursorPosConfig: cursorPosGeneralCenter,
-					DataHandler:     h,
-					Data:            d,
-					Next:            nil,
-					Finale:          nil,
-				})
-				if err != nil {
-					t.errors <- errors.WrapErr("t.addWidget", err)
-				}
-				err = t.drawSelectedWidget()
-				if err != nil {
-					t.errors <- errors.WrapErr("t.drawSelectedWidget", err)
-				}
+				t.SendMessageToServer("Message", 20)
 			}
 
 		case MY_SIGNAL_CLOSE:
 			if t.isConnected {
 				CloseConnection(t.tlsConnCloseData.wg, t.tlsConnCloseData.cancel)
 				t.isConnected = false
-				t.errors <- t.tlsConnection.Close()
+				t.errorsChannel <- t.tlsConnection.Close()
 				t.stateChannel <- "Disconnected"
 			}
 		default:
@@ -157,23 +141,13 @@ func (t *TUI) Run() error {
 func (t *TUI) createNotification(text, title string) {
 	notifier, err := createNotification(text, title)
 	t.selectedNotifier = &notifier
-	t.errors <- err
-	t.errors <- t.write(notifier.Buf)
+	t.errorsChannel <- err
+	t.errorsChannel <- t.write(notifier.Buf)
 	t.readEnterState <- true
 }
 
 func (t *TUI) setRoutines() error {
-	if t.errors == nil {
-		return errors.WrapErr("t.errors", errors.NOT_INIT)
-	}
-	go func() {
-		for err := range t.errors {
-			if err != nil {
-				t.createNotification(err.Error(), CONST_ERROR_N_TITLE)
-			}
-		}
-	}()
-	if t.input == nil {
+	if t.inputChannel == nil {
 		return errors.WrapErr("t.input", errors.NOT_INIT)
 	}
 	if t.oldState == nil {
@@ -191,22 +165,6 @@ func (t *TUI) setRoutines() error {
 	if t.messageChannel == nil {
 		return errors.WrapErr("t.messageChannel", errors.NOT_INIT)
 	}
-	go func() {
-		for message := range t.messageChannel {
-			t.createNotification(string(message), "Message!")
-		}
-	}()
-	go func() {
-		for state := range t.stateChannel {
-			t.writeMu.Lock()
-			oldRow, oldCol := t.getCursorPos()
-			t.errors <- t.moveCursor(t.height, len(footerStart)+1)
-			t._clearLine()
-			t.errors <- t.write(state)
-			t.errors <- t.moveCursor(oldRow, oldCol)
-			t.writeMu.Unlock()
-		}
-	}()
 	var readInputMu sync.Mutex
 	var readEnterdMu sync.Mutex
 	readInput := false
@@ -239,7 +197,7 @@ func (t *TUI) setRoutines() error {
 				if r == 13 {
 					readEnter = false
 					if t.selectedNotifier != nil {
-						t.errors <- t.write(t.selectedNotifier.Clear())
+						t.errorsChannel <- t.write(t.selectedNotifier.Clear())
 					}
 					continue
 				}
@@ -298,101 +256,26 @@ func (t *TUI) setRoutines() error {
 			} else {
 				if readInput {
 					log.Printf("Send %c | %d to t.input", r, r)
-					t.input <- r
+					t.inputChannel <- r
 				}
 			}
 			readInputMu.Lock()
 			if readInput {
 				switch r {
 				case 13:
-					t.input <- r
+					t.inputChannel <- r
 				case 127:
-					t.input <- r
+					t.inputChannel <- r
 				}
 			}
 			readInputMu.Unlock()
 		}
 	}()
 	//
-	if t.osSignals == nil {
-		return errors.WrapErr("t.osSignals", errors.NOT_INIT)
-	}
-	go func() {
-		for sig := range t.osSignals {
-			log.Printf("Receive OS.signal: %#v\n", sig)
-			switch sig {
-			case syscall.SIGWINCH:
-				t.errors <- t.redraw()
-			}
-		}
-	}()
-	if t.input == nil {
-		return errors.WrapErr("t.input", errors.NOT_INIT)
-	}
-	go func() {
-		for r := range t.input {
-			log.Printf("Read rune: %#v from t.input\n", r)
-			selWidget := t.selectedWidget
-			// Enter
-			if r == 13 {
-				log.Printf("Debug: selWidget: %#v ; selWidget.Input: %#v", selWidget, selWidget.Input)
-				if selWidget != nil && selWidget.Input != nil {
-					t.errors <- selWidget.Handler(t, selWidget.Data)
-					buf := selWidget.Clear()
-					t.writeMu.Lock()
-					err := t.write(buf)
-					t.writeMu.Unlock()
-					if err != nil {
-						t.errors <- errors.WrapErr("t.write", err)
-					}
-					if selWidget.Next != nil {
-						log.Printf("Seeing that widget.Next is not nil")
-						t.errors <- t.addWidget(*selWidget.Next)
-						t.errors <- t.drawSelectedWidget()
-					} else {
-						t.readInputState <- false
-					}
-					if selWidget.Finale != nil {
-						log.Printf("Seeing that widget.Finale is not nil")
-						t.errors <- selWidget.Finale(t, selWidget.FinaleData)
-					}
-				}
-				continue
-			} else if r == 127 {
-				log.Printf("seeing r = 127")
-				sliceLen := len(*selWidget.Input)
-				log.Printf("sliceLen = %d\n", sliceLen)
-				if sliceLen > 0 {
-					log.Printf("sliceLen > 0")
-					*selWidget.Input = (*selWidget.Input)[:sliceLen-1]
-					t.writeMu.Lock()
-					t.errors <- t.moveCursor(t.cursorPosRow, t.cursorPosCol-1)
-					t.errors <- t.writeRune(' ')
-					t.errors <- t.moveCursor(t.cursorPosRow, t.cursorPosCol-1)
-					t.writeMu.Unlock()
-				}
-				continue
-			}
-			if selWidget != nil && selWidget.Input != nil {
-				log.Printf("t.input: append %#v to widget input\n", r)
-				*selWidget.Input = append(*selWidget.Input, r)
-				log.Printf("t.input: trying to write %#v", r)
-				t.writeMu.Lock()
-				err := t.writeRune(r)
-				t.writeMu.Unlock()
-				if err != nil {
-					t.errors <- err
-				}
-			}
-		}
-	}()
 	return nil
 }
 
 func (t *TUI) readRoutines() error {
-	if t.input == nil {
-		return errors.WrapErr("t.input", errors.NOT_INIT)
-	}
 	return nil
 }
 
@@ -457,7 +340,7 @@ func (t *TUI) getCursorPos() (int, int) {
 }
 
 func (t *TUI) _clearLine() {
-	t.errors <- t.write("\033[0K")
+	t.errorsChannel <- t.write("\033[0K")
 }
 
 func (t *TUI) moveCursor(row, col int) error {

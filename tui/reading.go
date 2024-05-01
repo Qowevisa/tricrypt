@@ -15,7 +15,7 @@ func (t *TUI) launchReadingMessagesFromConnection(ctx context.Context, wg *sync.
 	defer wg.Done() // Mark this goroutine as done when it exits
 
 	if t.messageChannel == nil {
-		t.errors <- errors.WrapErr("t.messageChannel", errors.NOT_INIT)
+		t.errorsChannel <- errors.WrapErr("t.messageChannel", errors.NOT_INIT)
 		return
 	}
 	buf := make([]byte, CONST_MESSAGE_LEN)
@@ -27,7 +27,7 @@ func (t *TUI) launchReadingMessagesFromConnection(ctx context.Context, wg *sync.
 			timeoutDuration := 5 * time.Second
 			err := t.tlsConnection.SetReadDeadline(time.Now().Add(timeoutDuration))
 			if err != nil {
-				t.errors <- errors.WrapErr("SetReadDeadline", err)
+				t.errorsChannel <- errors.WrapErr("SetReadDeadline", err)
 				return
 			}
 			n, err := t.tlsConnection.Read(buf)
@@ -36,7 +36,7 @@ func (t *TUI) launchReadingMessagesFromConnection(ctx context.Context, wg *sync.
 					if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 						continue
 					}
-					t.errors <- errors.WrapErr("t.tlsConnection.Read", err)
+					t.errorsChannel <- errors.WrapErr("t.tlsConnection.Read", err)
 				}
 				return
 			}
