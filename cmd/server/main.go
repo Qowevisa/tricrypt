@@ -57,7 +57,11 @@ func handleClient(conn net.Conn) {
 	if err != nil {
 		log.Printf("ERROR: %#v\n", err)
 	} else {
-		conn.Write(ask)
+		log.Printf("Trying to send %#v\n", ask)
+		_, err = conn.Write(ask)
+		if err != nil {
+			log.Printf("ERROR: %#v\n", err)
+		}
 	}
 	for {
 		log.Print("server: conn: waiting")
@@ -68,9 +72,14 @@ func handleClient(conn net.Conn) {
 			}
 			break
 		}
-		log.Printf("server: conn: echo %q\n", string(buf[:n]))
 		answer := append([]byte("Hello! I see your message:"), buf[:n]...)
-		_, err = conn.Write(answer)
+		msg, err := communication.JustGetMessage(answer)
+		if err != nil {
+			log.Printf("ERROR: %#v\n", err)
+			continue
+		}
+		log.Printf("server: conn: sending %#v\n", msg)
+		_, err = conn.Write(msg)
 		if err != nil {
 			log.Printf("server: conn: write: %s", err)
 			break
