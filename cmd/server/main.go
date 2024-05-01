@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 
+	"git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
 )
 
@@ -52,6 +53,12 @@ func main() {
 func handleClient(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 512)
+	ask, err := communication.AskClientNickname()
+	if err != nil {
+		log.Printf("ERROR: %#v\n", err)
+	} else {
+		conn.Write(ask)
+	}
 	for {
 		log.Print("server: conn: waiting")
 		n, err := conn.Read(buf)
