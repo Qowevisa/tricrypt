@@ -7,6 +7,7 @@ import (
 
 const (
 	SERVER_COMMAND = 1 + iota
+	SERVER_MESSAGE
 	CLIENT_RESPONSE
 	P2P_MESSAGE
 )
@@ -28,6 +29,14 @@ func AskClientNickname() ([]byte, error) {
 	c := communicationMessage{
 		Type: SERVER_COMMAND,
 		Data: []byte{NICKNAME},
+	}
+	return c.Bytes()
+}
+
+func JustGetMessage(msg []byte) ([]byte, error) {
+	c := communicationMessage{
+		Type: SERVER_MESSAGE,
+		Data: msg,
 	}
 	return c.Bytes()
 }
