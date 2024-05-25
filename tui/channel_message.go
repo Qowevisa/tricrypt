@@ -13,25 +13,24 @@ func (t *TUI) launchMessageChannel() error {
 	}
 	go func() {
 		for message := range t.messageChannel {
-			t.createNotification(string(message), "Message!")
 			msg, err := communication.Decode(message)
 			t.errorsChannel <- err
 			if err != nil {
 				continue
 			}
-			switch msg.Type {
-			case communication.SERVER_COMMAND:
-				t.handleServerCommands(msg.Data)
+			switch msg.From {
+			case communication.FROM_SERVER:
+				t.handleServerCommands(*msg)
+			case communication.FROM_CLIENT:
+				t.createNotification(string(msg.Data), "Server Message!")
 			}
 		}
 	}()
 	return nil
 }
 
-func (t *TUI) handleServerCommands(data []byte) {
-	if len(data) == 1 {
-		if data[0] == communication.NICKNAME {
-			t.SendMessageToServer("Nickname", 16)
-		}
+func (t *TUI) handleServerCommands(data communication.Message) {
+	if data.About == communication.ABOUT_NICKNAME {
+		t.SendMessageToServer("Nickname", 16)
 	}
 }

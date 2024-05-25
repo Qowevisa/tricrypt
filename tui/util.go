@@ -24,4 +24,5 @@ func (t *TUI) SendMessageToServer(title string, minW int) {
 	if err != nil {
 		t.errorsChannel <- errors.WrapErr("t.drawSelectedWidget", err)
 	}
+	t.readInputState <- true
 }
