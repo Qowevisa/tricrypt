@@ -70,7 +70,7 @@ func main() {
 }
 
 func readFromServer(conn net.Conn, ws *websocket.Conn) {
-	buf := make([]byte, 512)
+	buf := make([]byte, 70000)
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
