@@ -49,6 +49,17 @@ func (u *UserCenter) AddUser(name string) (uint16, error) {
 	return ret, nil
 }
 
+func (u *UserCenter) DeleteIfHaveOne(id uint16) {
+	name, found := u.UsersITOS[id]
+	if !found {
+		log.Printf("User with %d id is not found; Can not delete\n", id)
+		return
+	}
+	delete(u.UsersITOS, id)
+	delete(u.UsersSTOI, name)
+	log.Printf("User with %s name and %d id was found; User is deleted\n", name, id)
+}
+
 func (u *UserCenter) GetID(name string) (uint16, error) {
 	id, have := u.UsersSTOI[name]
 	if !have {

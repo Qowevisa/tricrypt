@@ -55,6 +55,8 @@ func main() {
 func handleClient(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 512)
+	var registeredID uint16
+	var isRegistered bool
 	ask, err := com.ServerAskClientAboutNickname()
 	if err != nil {
 		log.Printf("ERROR: %#v\n", err)
@@ -104,6 +106,8 @@ func handleClient(conn net.Conn) {
 					continue
 				}
 				conn.Write(answ)
+				isRegistered = true
+				registeredID = id
 			}
 		case com.ID_CLIENT_SEND_SERVER_LINK:
 		default:
@@ -111,4 +115,7 @@ func handleClient(conn net.Conn) {
 		// Handle
 	}
 	log.Println("server: conn: closed")
+	if isRegistered {
+		userCenter.DeleteIfHaveOne(registeredID)
+	}
 }
