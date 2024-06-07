@@ -11,14 +11,14 @@ var (
 )
 
 type UserCenter struct {
-	UsersSTOI map[string]int32
-	UsersITOS map[int32]string
+	UsersSTOI map[string]uint16
+	UsersITOS map[uint16]string
 	Mu        sync.Mutex
 }
 
 func (u *UserCenter) Init() {
-	u.UsersSTOI = make(map[string]int32)
-	u.UsersITOS = make(map[int32]string)
+	u.UsersSTOI = make(map[string]uint16)
+	u.UsersITOS = make(map[uint16]string)
 }
 
 var (
@@ -26,19 +26,19 @@ var (
 	ERROR_DONT_HAVE    = errors.New("Username was not found")
 )
 
-func (u *UserCenter) AddUser(name string) (int32, error) {
+func (u *UserCenter) AddUser(name string) (uint16, error) {
 	u.Mu.Lock()
 	defer u.Mu.Unlock()
 	_, alreadyHave := u.UsersSTOI[name]
 	if alreadyHave {
-		return -1, ERROR_ALREADY_HAVE
+		return 0, ERROR_ALREADY_HAVE
 	}
-	var ret int32
+	var ret uint16
 	for {
 		rInt := rand.Int31()
-		_, taken := u.UsersITOS[rInt]
+		_, taken := u.UsersITOS[uint16(rInt)]
 		if !taken {
-			ret = rInt
+			ret = uint16(rInt)
 			break
 		}
 	}
@@ -47,15 +47,15 @@ func (u *UserCenter) AddUser(name string) (int32, error) {
 	return ret, nil
 }
 
-func (u *UserCenter) GetID(name string) (int32, error) {
+func (u *UserCenter) GetID(name string) (uint16, error) {
 	id, have := u.UsersSTOI[name]
 	if !have {
-		return -1, ERROR_DONT_HAVE
+		return 0, ERROR_DONT_HAVE
 	}
 	return id, nil
 }
 
-func (u *UserCenter) GetName(id int32) (string, error) {
+func (u *UserCenter) GetName(id uint16) (string, error) {
 	name, have := u.UsersITOS[id]
 	if !have {
 		return "", ERROR_DONT_HAVE

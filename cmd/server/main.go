@@ -96,8 +96,8 @@ func handleClient(conn net.Conn) {
 				}
 				conn.Write(answ)
 			} else {
-				idBytes := make([]byte, 4)
-				binary.BigEndian.PutUint32(idBytes, uint32(id))
+				idBytes := make([]byte, 2)
+				binary.BigEndian.PutUint16(idBytes, id)
 				answ, err := com.ServerSendClientHisID(idBytes)
 				if err != nil {
 					log.Printf("ERROR: %v\n", err)
