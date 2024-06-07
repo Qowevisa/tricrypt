@@ -86,11 +86,7 @@ func main() {
 			if err != nil {
 				log.Printf("ERROR: %v\n", err)
 			}
-			switch msg.From {
-			case communication.FROM_SERVER:
-
-			case communication.FROM_CLIENT:
-			}
+			log.Printf("I get %v\n", *msg)
 		}
 	}()
 	cancel()
