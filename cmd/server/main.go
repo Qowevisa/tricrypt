@@ -3,16 +3,18 @@ package main
 import (
 	"crypto/rand"
 	"crypto/tls"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
 	"net"
 
-	"git.qowevisa.me/Qowevisa/gotell/communication"
+	com "git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
 )
 
 func main() {
+	userCenter.Init()
 	host, err := env.GetHost()
 	if err != nil {
 		log.Fatal(err)
@@ -53,7 +55,7 @@ func main() {
 func handleClient(conn net.Conn) {
 	defer conn.Close()
 	buf := make([]byte, 512)
-	ask, err := communication.AskClientNickname()
+	ask, err := com.ServerAskClientAboutNickname()
 	if err != nil {
 		log.Printf("ERROR: %#v\n", err)
 	} else {
@@ -72,18 +74,41 @@ func handleClient(conn net.Conn) {
 			}
 			break
 		}
-		answer := append([]byte("Hello! I see your message:"), buf[:n]...)
-		msg, err := communication.JustGetMessage(answer)
+		msg, err := com.Decode(buf[:n])
 		if err != nil {
 			log.Printf("ERROR: %#v\n", err)
 			continue
 		}
-		log.Printf("server: conn: sending %#v\n", msg)
-		_, err = conn.Write(msg)
-		if err != nil {
-			log.Printf("server: conn: write: %s", err)
-			break
+		if msg == nil {
+			log.Printf("ERROR MSG IS NIL\n")
+			continue
 		}
+		log.Printf("server: conn: receive %#v\n", *msg)
+		// Handle
+		switch msg.ID {
+		case com.ID_CLIENT_SEND_SERVER_NICKNAME:
+			id, err := userCenter.AddUser(string(msg.Data))
+			if err != nil {
+				answ, err := com.ServerSendClientDecline()
+				if err != nil {
+					log.Printf("ERROR: %v\n", err)
+					continue
+				}
+				conn.Write(answ)
+			} else {
+				idBytes := make([]byte, 4)
+				binary.BigEndian.PutUint32(idBytes, uint32(id))
+				answ, err := com.ServerSendClientHisID(idBytes)
+				if err != nil {
+					log.Printf("ERROR: %v\n", err)
+					continue
+				}
+				conn.Write(answ)
+			}
+		case com.ID_CLIENT_SEND_SERVER_LINK:
+		default:
+		}
+		// Handle
 	}
 	log.Println("server: conn: closed")
 }
