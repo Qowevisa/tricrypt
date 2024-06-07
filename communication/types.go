@@ -6,7 +6,8 @@ type ClientForServer struct {
 }
 
 type RegisteredUser struct {
-	ID uint16
+	IsRegistered bool
+	ID           uint16
 }
 
 const (
@@ -22,5 +23,5 @@ const (
 type Link struct {
 	Status   uint8
 	Data     []byte
-	UseCount uint32
+	UseCount uint16
 }

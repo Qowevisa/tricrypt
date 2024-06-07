@@ -3,6 +3,7 @@ package communication
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/gob"
 
 	"git.qowevisa.me/Qowevisa/gotell/gmyerr"
@@ -126,7 +127,10 @@ func ServerSendClientDecline() ([]byte, error) {
 	return c.Bytes()
 }
 
-func (r *RegisteredUser) GenerateLink(count uint32) (Link, error) {
+func (r *RegisteredUser) GenerateLink(count uint16) (Link, error) {
+	if count == 0 {
+		return Link{}, ERROR_LINK_ZERO_COUNT
+	}
 	var l Link
 	buf := make([]byte, LINK_LEN_V1)
 
@@ -134,11 +138,9 @@ func (r *RegisteredUser) GenerateLink(count uint32) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
-	if count == 0 {
-		return Link{}, ERROR_LINK_ZERO_COUNT
-	}
+	encoded := base64.StdEncoding.EncodeToString(buf)
 	l.Status = LINK_STATUS_CREATED
-	l.Data = buf
+	l.Data = []byte(encoded)
 	l.UseCount = count
 
 	return l, nil
@@ -152,6 +154,57 @@ func (l *Link) Bytes() ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func DecodeLink(data []byte) (*Link, error) {
+	var l Link
+	buf := bytes.NewBuffer(data)
+	decoder := gob.NewDecoder(buf)
+	err := decoder.Decode(&l)
+	if err != nil {
+		return nil, err
+	}
+	return &l, nil
+}
+
+func ClientSendServerLink(l Link) ([]byte, error) {
+	bb, err := l.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	c := Message{
+		Version: V1,
+		ID:      ID_CLIENT_SEND_SERVER_LINK,
+		FromID:  0,
+		ToID:    0,
+		DataLen: uint16(len(bb)),
+		Data:    bb,
+	}
+	return c.Bytes()
+}
+
+func ServerApproveClientLink() ([]byte, error) {
+	c := Message{
+		Version: V1,
+		ID:      ID_SERVER_APPROVE_CLIENT_LINK,
+		FromID:  0,
+		ToID:    0,
+		DataLen: 0,
+		Data:    []byte{},
+	}
+	return c.Bytes()
+}
+
+func ServerDeclineClientLink() ([]byte, error) {
+	c := Message{
+		Version: V1,
+		ID:      ID_SERVER_DECLINE_CLIENT_LINK,
+		FromID:  0,
+		ToID:    0,
+		DataLen: 0,
+		Data:    []byte{},
+	}
+	return c.Bytes()
 }
 
 func (r *RegisteredUser) GetIDFromLink(l Link) ([]byte, error) {
