@@ -69,6 +69,8 @@ func main() {
 	select {}
 }
 
+var r com.RegisteredUser
+
 func readFromServer(conn net.Conn, ws *websocket.Conn) {
 	buf := make([]byte, 70000)
 	for {
@@ -91,6 +93,9 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			newID := binary.BigEndian.Uint16(msg.Data)
 			msg.FromID = newID
 			msg.Data = []byte{}
+			r.ID = newID
+			r.IsRegistered = true
+			break
 		}
 		log.Printf("client: readServer: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
@@ -105,8 +110,24 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 			log.Printf("WebSocket read error: %s", err)
 			return
 		}
-		msg.Version = com.V1
 		log.Printf("client: readWS: received message from Electron: %v", msg)
+		msg.Version = com.V1
+		switch msg.ID {
+		case com.ID_CLIENT_ASK_SERVER_LINK:
+			l, err := r.GenerateLink(msg.ToID)
+			if err != nil {
+				log.Printf("Error: link: %v", err)
+				continue
+			}
+			answ, err := com.ClientSendServerLink(l)
+			if err != nil {
+				log.Printf("Error: com: %v", err)
+				continue
+			}
+			log.Printf("client: readWS: sending data to server: %v", answ)
+			conn.Write(answ)
+			continue
+		}
 		encodedMsg, err := msg.Bytes()
 		if err != nil {
 			log.Printf("Encoding error: %s", err)
