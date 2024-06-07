@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"time"
 
 	com "git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
@@ -51,9 +52,15 @@ func main() {
 
 	// Connect to the Electron.js application via WebSocket
 	u := url.URL{Scheme: "ws", Host: "localhost:8081", Path: "/ws"}
-	ws, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		log.Fatal("dial:", err)
+	var ws *websocket.Conn
+	for {
+		ws, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
+		if err != nil {
+			log.Printf("Error: dial: %v\n", err)
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
 	}
 	defer ws.Close()
 
