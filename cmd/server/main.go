@@ -15,6 +15,7 @@ import (
 
 func main() {
 	userCenter.Init()
+	linkCenter.Init()
 	host, err := env.GetHost()
 	if err != nil {
 		log.Fatal(err)
@@ -110,6 +111,51 @@ func handleClient(conn net.Conn) {
 				registeredID = id
 			}
 		case com.ID_CLIENT_SEND_SERVER_LINK:
+			l, err := com.DecodeLink(msg.Data)
+			if err != nil {
+				log.Printf("ERROR: DecodeLink: %v\n", err)
+				continue
+			}
+			err = linkCenter.AddLink(msg.FromID, *l)
+			if err != nil {
+				log.Printf("ERROR: AddLink: %v\n", err)
+				answ, err := com.ServerDeclineClientLink()
+				if err != nil {
+					log.Printf("ERROR: BYTES: %v\n", err)
+					continue
+				}
+				conn.Write(answ)
+				continue
+			}
+			answ, err := com.ServerApproveClientLink()
+			if err != nil {
+				log.Printf("ERROR: BYTES: %v\n", err)
+				continue
+			}
+			conn.Write(answ)
+		case com.ID_CLIENT_ASK_SERVER_LINK:
+			link, err := linkCenter.GetLink(msg.Data)
+			if err != nil {
+				log.Printf("Error: %v\n", err)
+				continue
+			}
+			if link.LeftNum == 0 {
+				linkCenter.DeleteLink(msg.Data)
+				continue
+			}
+			// TODO: there can be an error on multi-thread app
+			link.LeftNum -= 1
+			name, err := userCenter.GetName(link.UserID)
+			if err != nil {
+				log.Printf("ERROR: userCenter: Getname: %v\n", err)
+				continue
+			}
+			answ, err := com.ServerSendClientIDFromLink(link.UserID, []byte(name))
+			if err != nil {
+				log.Printf("ERROR: BYTES: %v\n", err)
+				continue
+			}
+			conn.Write(answ)
 		default:
 		}
 		// Handle
