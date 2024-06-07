@@ -3,13 +3,14 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
 	"net/url"
 	"os"
 
-	"git.qowevisa.me/Qowevisa/gotell/communication"
+	com "git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
 	"github.com/gorilla/websocket"
 )
@@ -69,7 +70,7 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			log.Printf("client: read: %s", err)
 			return
 		}
-		msg, err := communication.Decode(buf[:n])
+		msg, err := com.Decode(buf[:n])
 		if err != nil {
 			log.Printf("ERROR: %#v\n", err)
 			continue
@@ -78,18 +79,26 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			continue
 		}
 		log.Printf("client: received message from server: %v", *msg)
+		switch msg.ID {
+		case com.ID_SERVER_APPROVE_CLIENT_NICKNAME:
+			newID := binary.BigEndian.Uint16(msg.Data)
+			msg.FromID = newID
+			msg.Data = []byte{}
+		}
+		log.Printf("client: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
 	}
 }
 
 func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 	for {
-		var msg communication.Message
+		var msg com.Message
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			log.Printf("WebSocket read error: %s", err)
 			return
 		}
+		msg.Version = com.V1
 		log.Printf("client: received message from Electron: %v", msg)
 		encodedMsg, err := msg.Bytes()
 		if err != nil {
@@ -99,4 +108,3 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 		conn.Write(encodedMsg)
 	}
 }
-
