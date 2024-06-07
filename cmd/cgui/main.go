@@ -85,14 +85,14 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 		if msg == nil {
 			continue
 		}
-		log.Printf("client: received message from server: %v", *msg)
+		log.Printf("client: readServer: received message from server: %v", *msg)
 		switch msg.ID {
 		case com.ID_SERVER_APPROVE_CLIENT_NICKNAME:
 			newID := binary.BigEndian.Uint16(msg.Data)
 			msg.FromID = newID
 			msg.Data = []byte{}
 		}
-		log.Printf("client: sending message to websocket: %v", *msg)
+		log.Printf("client: readServer: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
 	}
 }
@@ -106,12 +106,13 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 			return
 		}
 		msg.Version = com.V1
-		log.Printf("client: received message from Electron: %v", msg)
+		log.Printf("client: readWS: received message from Electron: %v", msg)
 		encodedMsg, err := msg.Bytes()
 		if err != nil {
 			log.Printf("Encoding error: %s", err)
 			continue
 		}
+		log.Printf("client: readWS: sending data to server: %v", encodedMsg)
 		conn.Write(encodedMsg)
 	}
 }
