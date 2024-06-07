@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"math/rand"
 	"sync"
 )
@@ -42,6 +43,7 @@ func (u *UserCenter) AddUser(name string) (uint16, error) {
 			break
 		}
 	}
+	log.Printf("Users: add %s with %d id\n", name, ret)
 	u.UsersITOS[ret] = name
 	u.UsersSTOI[name] = ret
 	return ret, nil
