@@ -163,5 +163,6 @@ func handleClient(conn net.Conn) {
 	log.Println("server: conn: closed")
 	if isRegistered {
 		userCenter.DeleteIfHaveOne(registeredID)
+		linkCenter.CleanAfterLeave(registeredID)
 	}
 }
