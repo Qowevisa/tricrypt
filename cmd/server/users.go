@@ -23,8 +23,8 @@ func (u *UserCenter) Init() {
 }
 
 var (
-	ERROR_ALREADY_HAVE = errors.New("Username is already taken")
-	ERROR_DONT_HAVE    = errors.New("Username was not found")
+	ERROR_ALREADY_HAVE = errors.New("Already taken")
+	ERROR_DONT_HAVE    = errors.New("Not found")
 )
 
 func (u *UserCenter) AddUser(name string) (uint16, error) {

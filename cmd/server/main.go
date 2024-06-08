@@ -94,7 +94,7 @@ func handleClient(conn net.Conn) {
 			if err != nil {
 				answ, err := com.ServerSendClientDecline()
 				if err != nil {
-					log.Printf("ERROR: %v\n", err)
+					log.Printf("ERROR: BYTES: %v\n", err)
 					continue
 				}
 				conn.Write(answ)
@@ -103,7 +103,7 @@ func handleClient(conn net.Conn) {
 				binary.BigEndian.PutUint16(idBytes, id)
 				answ, err := com.ServerSendClientHisID(idBytes)
 				if err != nil {
-					log.Printf("ERROR: %v\n", err)
+					log.Printf("ERROR: BYTES: %v\n", err)
 					continue
 				}
 				conn.Write(answ)
@@ -136,7 +136,7 @@ func handleClient(conn net.Conn) {
 		case com.ID_CLIENT_ASK_SERVER_LINK:
 			link, err := linkCenter.GetLink(msg.Data)
 			if err != nil {
-				log.Printf("Error: %v\n", err)
+				log.Printf("Error: GetLink: %v\n", err)
 				continue
 			}
 			if link.LeftNum == 0 {

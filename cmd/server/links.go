@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"sync"
 
 	com "git.qowevisa.me/Qowevisa/gotell/communication"
@@ -34,6 +35,7 @@ func (l *LinkCenter) AddLink(id uint16, link com.Link) error {
 		LeftNum: link.UseCount,
 		UserID:  id,
 	}
+	log.Printf("Added link by %s\n", string(link.Data))
 	l.Mu.Unlock()
 	return nil
 }
@@ -46,6 +48,7 @@ func (l *LinkCenter) DeleteLink(data []byte) error {
 }
 
 func (l *LinkCenter) GetLink(data []byte) (*UserLink, error) {
+	log.Printf("LinkCenter : GetLink by : %s\n", string(data))
 	val, found := l.Links[string(data)]
 	if !found {
 		return nil, ERROR_DONT_HAVE
