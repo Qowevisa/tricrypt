@@ -28,6 +28,7 @@ var (
 
 func (l *LinkCenter) Init() {
 	l.Links = make(map[string]*UserLink)
+	l.SavedLinks = make(map[uint16]*LinkArray)
 }
 
 func (l *LinkCenter) AddLink(id uint16, link com.Link) error {
