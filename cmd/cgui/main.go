@@ -70,6 +70,7 @@ func main() {
 }
 
 var r com.RegisteredUser
+var tmpLink *com.Link
 
 func readFromServer(conn net.Conn, ws *websocket.Conn) {
 	buf := make([]byte, 70000)
@@ -96,6 +97,12 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			r.ID = newID
 			r.IsRegistered = true
 			break
+		case com.ID_SERVER_APPROVE_CLIENT_LINK:
+			if tmpLink == nil {
+				continue
+			}
+			msg.ToID = tmpLink.UseCount
+			msg.Data = tmpLink.Data
 		}
 		log.Printf("client: readServer: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
@@ -113,12 +120,16 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 		log.Printf("client: readWS: received message from Electron: %v", msg)
 		msg.Version = com.V1
 		switch msg.ID {
-		case com.ID_CLIENT_ASK_SERVER_LINK:
+		case com.ID_CLIENT_SEND_SERVER_LINK:
+			if !r.IsRegistered {
+				continue
+			}
 			l, err := r.GenerateLink(msg.ToID)
 			if err != nil {
 				log.Printf("Error: link: %v", err)
 				continue
 			}
+			tmpLink = &l
 			answ, err := com.ClientSendServerLink(l)
 			if err != nil {
 				log.Printf("Error: com: %v", err)
