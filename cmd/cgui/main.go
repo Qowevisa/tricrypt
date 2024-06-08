@@ -129,8 +129,6 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 				log.Printf("Error: link: %v", err)
 				continue
 			}
-			log.Printf("I generated link: %v\n", l)
-			log.Printf("Link data as string is: %s\n", string(l.Data))
 			tmpLink = &l
 			answ, err := com.ClientSendServerLink(r.ID, l)
 			if err != nil {
