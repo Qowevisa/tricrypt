@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	LINK_LEN_V1 = 32
+	LINK_LEN_V1 = 8
 )
 
 // NOTE: Data should be 32 or 64 bytes

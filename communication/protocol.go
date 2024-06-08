@@ -3,7 +3,7 @@ package communication
 import (
 	"bytes"
 	"crypto/rand"
-	"encoding/base64"
+	"encoding/base32"
 	"encoding/gob"
 
 	"git.qowevisa.me/Qowevisa/gotell/gmyerr"
@@ -138,7 +138,7 @@ func (r *RegisteredUser) GenerateLink(count uint16) (Link, error) {
 	if err != nil {
 		return Link{}, err
 	}
-	encoded := base64.StdEncoding.EncodeToString(buf)
+	encoded := base32.StdEncoding.EncodeToString(buf)
 	l.Status = LINK_STATUS_CREATED
 	l.Data = []byte(encoded)
 	l.UseCount = count
