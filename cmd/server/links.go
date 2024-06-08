@@ -37,7 +37,18 @@ func (l *LinkCenter) AddLink(id uint16, link com.Link) error {
 	}
 	log.Printf("Added link by %s\n", string(link.Data))
 	l.Mu.Unlock()
+	l.debug()
 	return nil
+}
+
+func (l *LinkCenter) debug() {
+	for val, key := range l.Links {
+		if key == nil {
+			log.Printf("DEBUG: LINKCENTER: VAL = %s LINK = NIL\n", val)
+			continue
+		}
+		log.Printf("DEBUG: LINKCENTER: VAL = %s LINK = %v\n", val, *key)
+	}
 }
 
 func (l *LinkCenter) DeleteLink(data []byte) error {
