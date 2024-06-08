@@ -76,7 +76,7 @@ func (l *LinkCenter) DeleteLink(data []byte) error {
 
 func (l *LinkCenter) GetLink(data []byte) (*UserLink, error) {
 	l.Mu.Lock()
-	l.Mu.Unlock()
+	defer l.Mu.Unlock()
 	val, found := l.Links[string(data)]
 	if !found {
 		return nil, ERROR_DONT_HAVE
@@ -96,5 +96,6 @@ func (l *LinkCenter) CleanAfterLeave(id uint16) {
 		log.Printf("Cleaning: Id=%d deleting %s;\n", id, link)
 		delete(l.Links, link)
 	}
+	l.debug()
 	l.Mu.Unlock()
 }
