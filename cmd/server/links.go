@@ -59,8 +59,10 @@ func (l *LinkCenter) DeleteLink(data []byte) error {
 }
 
 func (l *LinkCenter) GetLink(data []byte) (*UserLink, error) {
+	l.debug()
 	log.Printf("LinkCenter : GetLink by : %s\n", string(data))
 	val, found := l.Links[string(data)]
+	log.Printf("VAL = %v ; F = %v", val, found)
 	if !found {
 		return nil, ERROR_DONT_HAVE
 	}
