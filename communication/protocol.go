@@ -167,7 +167,7 @@ func DecodeLink(data []byte) (*Link, error) {
 	return &l, nil
 }
 
-func ClientSendServerLink(l Link) ([]byte, error) {
+func ClientSendServerLink(from uint16, l Link) ([]byte, error) {
 	bb, err := l.Bytes()
 	if err != nil {
 		return nil, err
@@ -175,7 +175,7 @@ func ClientSendServerLink(l Link) ([]byte, error) {
 	c := Message{
 		Version: V1,
 		ID:      ID_CLIENT_SEND_SERVER_LINK,
-		FromID:  0,
+		FromID:  from,
 		ToID:    0,
 		DataLen: uint16(len(bb)),
 		Data:    bb,
