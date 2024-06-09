@@ -16,6 +16,7 @@ import (
 func main() {
 	userCenter.Init()
 	linkCenter.Init()
+	connCenter.Init()
 	host, err := env.GetHost()
 	if err != nil {
 		log.Fatal(err)
@@ -109,6 +110,7 @@ func handleClient(conn net.Conn) {
 				conn.Write(answ)
 				isRegistered = true
 				registeredID = id
+				connCenter.AddConn(id, conn)
 			}
 		case com.ID_CLIENT_SEND_SERVER_LINK:
 			l, err := com.DecodeLink(msg.Data)
@@ -164,5 +166,6 @@ func handleClient(conn net.Conn) {
 	if isRegistered {
 		userCenter.DeleteIfHaveOne(registeredID)
 		linkCenter.CleanAfterLeave(registeredID)
+		connCenter.DeleteIfHaveOne(registeredID)
 	}
 }
