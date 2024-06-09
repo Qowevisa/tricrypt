@@ -10,21 +10,41 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime"
+	"runtime/pprof"
 	"sync"
 	"syscall"
+	"time"
 
 	com "git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
-	"git.qowevisa.me/Qowevisa/gotell/profilers"
 )
 
-func atEnd() {
-	profilers.GetMemoryProfiler()
+func captureHeapProfile() {
+	currentTime := time.Now().Format("2006_01_02T15_04")
+	filename := fmt.Sprintf("heap_%s.prof", currentTime)
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Fatalf("could not create memory profile: %v", err)
+	}
+	defer f.Close()
+	runtime.GC()
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Fatalf("could not write memory profile: %v", err)
+	}
 }
 
 func main() {
-	cpuProfDefer := profilers.GetCPUProfiler()
-	defer cpuProfDefer()
+	f, err := os.Create("cpu.prof")
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		panic(err)
+	}
+	defer pprof.StopCPUProfile()
+
 	userCenter.Init()
 	linkCenter.Init()
 	connCenter.Init()
@@ -55,18 +75,23 @@ func main() {
 	defer listener.Close()
 	log.Printf("server: listening on %s", service)
 
-	defer atEnd()
-
 	var wg sync.WaitGroup
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		<-c
+		<-quit
 		log.Println("received shutdown signal")
 		listener.Close()
 		wg.Wait()
 		os.Exit(0)
+	}()
+
+	ticker := time.NewTicker(3 * time.Minute)
+	go func() {
+		for range ticker.C {
+			captureHeapProfile()
+		}
 	}()
 
 	for {
