@@ -158,6 +158,15 @@ func handleClient(conn net.Conn) {
 				continue
 			}
 			conn.Write(answ)
+			// REDIRECTED STUFF
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE:
+			toConn, err := connCenter.GetConn(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: connCenter: GetConn: %v\n", err)
+				continue
+			}
+			log.Printf("Redirecting msg to %d\n", msg.ToID)
+			toConn.Write(buf[:n])
 		default:
 		}
 		// Handle
