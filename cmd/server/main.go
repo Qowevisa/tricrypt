@@ -32,6 +32,7 @@ func captureHeapProfile() {
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		log.Fatalf("could not write memory profile: %v", err)
 	}
+	log.Printf("Created %s mem profile\n", filename)
 }
 
 func main() {
