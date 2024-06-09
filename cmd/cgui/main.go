@@ -138,6 +138,11 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 			log.Printf("client: readWS: sending data to server: %v", answ)
 			conn.Write(answ)
 			continue
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE:
+			if !r.IsRegistered {
+				continue
+			}
+			msg.FromID = r.ID
 		}
 		encodedMsg, err := msg.Bytes()
 		if err != nil {
