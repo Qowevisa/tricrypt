@@ -8,12 +8,23 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	com "git.qowevisa.me/Qowevisa/gotell/communication"
 	"git.qowevisa.me/Qowevisa/gotell/env"
+	"git.qowevisa.me/Qowevisa/gotell/profilers"
 )
 
+func atEnd() {
+	profilers.GetMemoryProfiler()
+}
+
 func main() {
+	cpuProfDefer := profilers.GetCPUProfiler()
+	defer cpuProfDefer()
 	userCenter.Init()
 	linkCenter.Init()
 	connCenter.Init()
@@ -41,7 +52,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("server: listen: %s", err)
 	}
+	defer listener.Close()
 	log.Printf("server: listening on %s", service)
+
+	defer atEnd()
+
+	var wg sync.WaitGroup
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+		<-c
+		log.Println("received shutdown signal")
+		listener.Close()
+		wg.Wait()
+		os.Exit(0)
+	}()
 
 	for {
 		conn, err := listener.Accept()
