@@ -211,7 +211,14 @@ func handleClient(conn net.Conn) {
 			}
 			conn.Write(answ)
 			// REDIRECTED STUFF
-		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE:
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_APPROVE_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_DECLINE_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_SEND_CLIENT_ECDH_PUBKEY,
+			com.ID_CLIENT_SEND_CLIENT_CBES_SPECS,
+			com.ID_CLIENT_SEND_CLIENT_MKLG_FINGERPRINT,
+			com.ID_CLIENT_DECLINE_CLIENT_MKLG_FINGERPRINT,
+			com.ID_CLIENT_SEND_CLIENT_MESSAGE:
 			toConn, err := connCenter.GetConn(msg.ToID)
 			if err != nil {
 				log.Printf("ERROR: connCenter: GetConn: %v\n", err)
