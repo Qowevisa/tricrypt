@@ -8,6 +8,7 @@ type ClientForServer struct {
 type RegisteredUser struct {
 	IsRegistered bool
 	ID           uint16
+	Name         string
 }
 
 const (
