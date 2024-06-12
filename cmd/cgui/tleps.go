@@ -38,6 +38,7 @@ func (t *TlepCenter) AddTLEP(id uint16, name string) error {
 	if err != nil {
 		return gmyerr.WrapPrefix("tlep.InitTLEP", err)
 	}
+	val.Debug = true
 	t.TLEPs[id] = val
 	log.Printf("TLEPs: add %p for %d id\n", val, id)
 	return nil
