@@ -2,6 +2,8 @@ package tlep
 
 import (
 	"errors"
+	"fmt"
+
 	"git.qowevisa.me/Qowevisa/gotell/tlep/chaos"
 	"git.qowevisa.me/Qowevisa/gotell/tlep/ecdh"
 	"git.qowevisa.me/Qowevisa/gotell/tlep/encrypt"
@@ -18,6 +20,10 @@ var (
 	TLEP_LEVEL_ECDH           TLEPLevel = 1
 	TLEP_LEVEL_ECDH_CBES      TLEPLevel = 2
 	TLEP_LEVEL_ECDH_CBES_MKLG TLEPLevel = 3
+)
+
+var (
+	ERROR_UNHANDLED_TLEP_LEVEL = errors.New("Unhandled TLEP LEVEL")
 )
 
 // Three Layer Encryption Protocol schema
@@ -362,4 +368,28 @@ func (t *TLEP) DecryptMessageMESCHA(message []byte) ([]byte, error) {
 		return nil, gmyerr.WrapPrefix("encrypt.Decrypt", err)
 	}
 	return msg.Data, nil
+}
+
+func (t *TLEP) EncryptMessageAtMax(msg []byte) ([]byte, error) {
+	switch t.SLLevel {
+	case TLEP_LEVEL_ECDH:
+		return t.EncryptMessageEA(msg)
+	case TLEP_LEVEL_ECDH_CBES:
+		return t.EncryptMessageCAFEA(msg)
+	case TLEP_LEVEL_ECDH_CBES_MKLG:
+		return t.EncryptMessageMESCHA(msg)
+	}
+	return nil, gmyerr.WrapPrefix(fmt.Sprintf("TLEP: %d", t.SLLevel), ERROR_UNHANDLED_TLEP_LEVEL)
+}
+
+func (t *TLEP) DecryptMessageAtMax(msg []byte) ([]byte, error) {
+	switch t.SLLevel {
+	case TLEP_LEVEL_ECDH:
+		return t.DecryptMessageEA(msg)
+	case TLEP_LEVEL_ECDH_CBES:
+		return t.DecryptMessageCAFEA(msg)
+	case TLEP_LEVEL_ECDH_CBES_MKLG:
+		return t.DecryptMessageMESCHA(msg)
+	}
+	return nil, gmyerr.WrapPrefix(fmt.Sprintf("TLEP: %d", t.SLLevel), ERROR_UNHANDLED_TLEP_LEVEL)
 }
