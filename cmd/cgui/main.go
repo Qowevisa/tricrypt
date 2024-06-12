@@ -71,6 +71,7 @@ func main() {
 
 var r com.RegisteredUser
 var tmpLink *com.Link
+var tmpNick string
 
 func readFromServer(conn net.Conn, ws *websocket.Conn) {
 	buf := make([]byte, 70000)
@@ -95,6 +96,9 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			msg.FromID = newID
 			msg.Data = []byte{}
 			r.ID = newID
+			if tmpNick != "" {
+				r.Name = tmpNick
+			}
 			r.IsRegistered = true
 			break
 		case com.ID_SERVER_APPROVE_CLIENT_LINK:
@@ -103,6 +107,49 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			}
 			msg.ToID = tmpLink.UseCount
 			msg.Data = tmpLink.Data
+		// Crypto stuff
+		case com.ID_CLIENT_SEND_CLIENT_ECDH_PUBKEY:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			err = t.ECDHApplyOtherKeyBytes(msg.Data)
+			if err != nil {
+				log.Printf("ERROR: tlep: ECDHApplyOtherKeyBytes: %v\n", err)
+				continue
+			}
+			msg.Data = []byte{}
+		case com.ID_CLIENT_SEND_CLIENT_CBES_SPECS:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			cbes, err := t.DecryptMessageEA(msg.Data)
+			if err != nil {
+				log.Printf("ERROR: tlep: DecryptMessageEA: %v\n", err)
+				continue
+			}
+			err = t.CBESSetFromBytes(cbes)
+			if err != nil {
+				log.Printf("ERROR: tlep: CBESSetFromBytes: %v\n", err)
+				continue
+			}
+			// message
+		case com.ID_CLIENT_SEND_CLIENT_MESSAGE:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			decrypedMsg, err := t.DecryptMessageAtMax(msg.Data)
+			if err != nil {
+				log.Printf("ERROR: tlep: DecryptMessageAtMax: %v\n", err)
+				continue
+			}
+			msg.Data = decrypedMsg
+			// switch
 		}
 		log.Printf("client: readServer: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
@@ -120,6 +167,8 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 		log.Printf("client: readWS: received message from Electron: %v", msg)
 		msg.Version = com.V1
 		switch msg.ID {
+		case com.ID_CLIENT_SEND_SERVER_NICKNAME:
+			tmpNick = string(msg.Data)
 		case com.ID_CLIENT_SEND_SERVER_LINK:
 			if !r.IsRegistered {
 				continue
@@ -150,6 +199,63 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 				continue
 			}
 			msg.FromID = r.ID
+			// switch
+		}
+		// Crypto stuff
+		switch msg.ID {
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_APPROVE_CLIENT_HANDSHAKE:
+			err := tlepCenter.AddUser(msg.ToID, fmt.Sprintf("%s-%d", r.Name, msg.ToID))
+			if err != nil {
+				log.Printf("ERROR: tlepCenter.AddUser: %v\n", err)
+			}
+		case com.ID_CLIENT_SEND_CLIENT_ECDH_PUBKEY:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			key, err := t.ECDHGetPublicKey()
+			if err != nil {
+				log.Printf("ERROR: tlep: ECDHGetPublicKey: %v\n", err)
+				continue
+			}
+			msg.Data = key
+		case com.ID_CLIENT_SEND_CLIENT_CBES_SPECS:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			err = t.CBESInitRandom()
+			if err != nil {
+				log.Printf("ERROR: tlep: CBESInitRandom: %v\n", err)
+				continue
+			}
+			cbes, err := t.CBESGetBytes()
+			if err != nil {
+				log.Printf("ERROR: tlep: ECDHGetPublicKey: %v\n", err)
+				continue
+			}
+			cbesEAEncr, err := t.EncryptMessageEA(cbes)
+			if err != nil {
+				log.Printf("ERROR: tlep: EncryptMessageEA: %v\n", err)
+				continue
+			}
+			msg.Data = cbesEAEncr
+			// message
+		case com.ID_CLIENT_SEND_CLIENT_MESSAGE:
+			t, err := tlepCenter.GetTLEP(msg.ToID)
+			if err != nil {
+				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
+				continue
+			}
+			encrypedMsg, err := t.EncryptMessageAtMax(msg.Data)
+			if err != nil {
+				log.Printf("ERROR: tlep: EncryptMessageAtMax: %v\n", err)
+				continue
+			}
+			msg.Data = encrypedMsg
 			// switch
 		}
 		encodedMsg, err := msg.Bytes()
