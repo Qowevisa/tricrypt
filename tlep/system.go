@@ -53,12 +53,18 @@ func InitTLEP(name string) (*TLEP, error) {
 	cbes := chaos.CreateNewChaosSystem()
 	t.CBES = cbes
 	t.SLLevel = TLEP_LEVEL_NO_CONNECTION
+	if t.Debug {
+		log.Printf("TLEP initiated")
+	}
 	return &t, nil
 }
 
 func (t *TLEP) ECDHGetPublicKey() ([]byte, error) {
 	if t.ECDHConnection == nil {
 		return nil, gmyerr.WrapPrefix("t.ECDHConnection", IS_NIL)
+	}
+	if t.Debug {
+		log.Printf("TLEP uses GetMyPublicKeyBytes")
 	}
 	ar := t.ECDHConnection.GetMyPublicKeyBytes()
 	return ar, nil
@@ -73,6 +79,9 @@ func (t *TLEP) ECDHApplyOtherKeyBytes(otherKey []byte) error {
 		return gmyerr.WrapPrefix("t.ECDHConnection.AcceptOtherPubKeyBytes", err)
 	}
 	t.SLLevel = TLEP_LEVEL_ECDH
+	if t.Debug {
+		log.Printf("TLEP is upgraded to ECDH level")
+	}
 	return nil
 }
 
@@ -85,6 +94,9 @@ func (t *TLEP) CBESInitRandom() error {
 		return gmyerr.WrapPrefix("t.CBES.InitRandom", IS_NIL)
 	}
 	t.SLLevel = TLEP_LEVEL_ECDH_CBES
+	if t.Debug {
+		log.Printf("TLEP is upgraded to ECDH_CBES level")
+	}
 	return nil
 }
 
@@ -102,6 +114,9 @@ func (t *TLEP) CBESSetFromBytes(bytes []byte) error {
 	}
 	t.CBES = newCBES
 	t.SLLevel = TLEP_LEVEL_ECDH_CBES
+	if t.Debug {
+		log.Printf("TLEP is upgraded to ECDH_CBES level")
+	}
 	return nil
 }
 
