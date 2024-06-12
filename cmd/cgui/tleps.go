@@ -27,7 +27,7 @@ var (
 	ERROR_DONT_HAVE    = errors.New("Not found")
 )
 
-func (t *TlepCenter) AddUser(id uint16, name string) error {
+func (t *TlepCenter) AddTLEP(id uint16, name string) error {
 	t.Mu.Lock()
 	defer t.Mu.Unlock()
 	_, alreadyHave := t.TLEPs[id]

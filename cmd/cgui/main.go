@@ -206,7 +206,7 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 		switch msg.ID {
 		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE,
 			com.ID_CLIENT_APPROVE_CLIENT_HANDSHAKE:
-			err := tlepCenter.AddUser(msg.ToID, fmt.Sprintf("%s-%d", r.Name, msg.ToID))
+			err := tlepCenter.AddTLEP(msg.ToID, fmt.Sprintf("%s-%d", r.Name, msg.ToID))
 			if err != nil {
 				log.Printf("ERROR: tlepCenter.AddUser: %v\n", err)
 			}
