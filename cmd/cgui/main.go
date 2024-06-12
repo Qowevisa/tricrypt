@@ -17,6 +17,7 @@ import (
 )
 
 func main() {
+	tlepCenter.Init()
 	loadingFileName := env.ServerFullchainFileName
 	cert, err := os.ReadFile(loadingFileName)
 	if err != nil {
