@@ -57,6 +57,7 @@ func (t *TlepCenter) DeleteIfHaveOne(id uint16) {
 }
 
 func (t *TlepCenter) GetTLEP(id uint16) (*tlep.TLEP, error) {
+	log.Printf("Getting tlep by id = %d\n", id)
 	name, have := t.TLEPs[id]
 	if !have {
 		return nil, ERROR_DONT_HAVE
