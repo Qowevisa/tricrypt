@@ -18,6 +18,7 @@ import (
 
 func main() {
 	tlepCenter.Init()
+	userCenter.Init()
 	loadingFileName := env.ServerFullchainFileName
 	cert, err := os.ReadFile(loadingFileName)
 	if err != nil {
@@ -120,7 +121,12 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 				log.Printf("ERROR: tlep: ECDHApplyOtherKeyBytes: %v\n", err)
 				continue
 			}
-			msg.Data = []byte{}
+			fromName, err := userCenter.GetName(msg.FromID)
+			if err != nil {
+				log.Printf("ERROR: userCenter: GetName: %v\n", err)
+			} else {
+				msg.Data = []byte(fromName)
+			}
 		case com.ID_CLIENT_SEND_CLIENT_CBES_SPECS:
 			t, err := tlepCenter.GetTLEP(msg.FromID)
 			if err != nil {
@@ -137,6 +143,12 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 				log.Printf("ERROR: tlep: CBESSetFromBytes: %v\n", err)
 				continue
 			}
+			fromName, err := userCenter.GetName(msg.FromID)
+			if err != nil {
+				log.Printf("ERROR: userCenter: GetName: %v\n", err)
+			} else {
+				msg.Data = []byte(fromName)
+			}
 			// message
 		case com.ID_CLIENT_SEND_CLIENT_MESSAGE:
 			t, err := tlepCenter.GetTLEP(msg.FromID)
@@ -151,6 +163,12 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			}
 			msg.Data = decrypedMsg
 			// switch
+		}
+		// user stuff
+		switch msg.ID {
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_APPROVE_CLIENT_HANDSHAKE:
+			userCenter.AddUser(string(msg.Data), msg.FromID)
 		}
 		log.Printf("client: readServer: sending message to websocket: %v", *msg)
 		ws.WriteJSON(*msg)
@@ -201,6 +219,14 @@ func readFromWebSocket(conn net.Conn, ws *websocket.Conn) {
 			}
 			msg.FromID = r.ID
 			// switch
+		}
+		// user stuff
+		switch msg.ID {
+		case com.ID_CLIENT_ASK_CLIENT_HANDSHAKE,
+			com.ID_CLIENT_APPROVE_CLIENT_HANDSHAKE:
+			if r.IsRegistered {
+				msg.Data = []byte(r.Name)
+			}
 		}
 		// Crypto stuff
 		switch msg.ID {
