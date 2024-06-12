@@ -110,7 +110,7 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			msg.Data = tmpLink.Data
 		// Crypto stuff
 		case com.ID_CLIENT_SEND_CLIENT_ECDH_PUBKEY:
-			t, err := tlepCenter.GetTLEP(msg.ToID)
+			t, err := tlepCenter.GetTLEP(msg.FromID)
 			if err != nil {
 				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
 				continue
@@ -122,7 +122,7 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			}
 			msg.Data = []byte{}
 		case com.ID_CLIENT_SEND_CLIENT_CBES_SPECS:
-			t, err := tlepCenter.GetTLEP(msg.ToID)
+			t, err := tlepCenter.GetTLEP(msg.FromID)
 			if err != nil {
 				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
 				continue
@@ -139,7 +139,7 @@ func readFromServer(conn net.Conn, ws *websocket.Conn) {
 			}
 			// message
 		case com.ID_CLIENT_SEND_CLIENT_MESSAGE:
-			t, err := tlepCenter.GetTLEP(msg.ToID)
+			t, err := tlepCenter.GetTLEP(msg.FromID)
 			if err != nil {
 				log.Printf("ERROR: tlep: GetTLEP: %v\n", err)
 				continue
