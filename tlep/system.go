@@ -3,6 +3,7 @@ package tlep
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"git.qowevisa.me/Qowevisa/gotell/tlep/chaos"
 	"git.qowevisa.me/Qowevisa/gotell/tlep/ecdh"
@@ -37,6 +38,8 @@ type TLEP struct {
 	CBES *chaos.ChaosSystem
 	// MonKeyLanG Dictionary
 	MKLGDict *monkeylang.Dictionary
+	// Debug for logging
+	Debug bool
 }
 
 func InitTLEP(name string) (*TLEP, error) {
@@ -373,10 +376,19 @@ func (t *TLEP) DecryptMessageMESCHA(message []byte) ([]byte, error) {
 func (t *TLEP) EncryptMessageAtMax(msg []byte) ([]byte, error) {
 	switch t.SLLevel {
 	case TLEP_LEVEL_ECDH:
+		if t.Debug {
+			log.Printf("Encrypting using EA")
+		}
 		return t.EncryptMessageEA(msg)
 	case TLEP_LEVEL_ECDH_CBES:
+		if t.Debug {
+			log.Printf("Encrypting using CAFEA")
+		}
 		return t.EncryptMessageCAFEA(msg)
 	case TLEP_LEVEL_ECDH_CBES_MKLG:
+		if t.Debug {
+			log.Printf("Encrypting using MESCHA")
+		}
 		return t.EncryptMessageMESCHA(msg)
 	}
 	return nil, gmyerr.WrapPrefix(fmt.Sprintf("TLEP: %d", t.SLLevel), ERROR_UNHANDLED_TLEP_LEVEL)
@@ -385,10 +397,19 @@ func (t *TLEP) EncryptMessageAtMax(msg []byte) ([]byte, error) {
 func (t *TLEP) DecryptMessageAtMax(msg []byte) ([]byte, error) {
 	switch t.SLLevel {
 	case TLEP_LEVEL_ECDH:
+		if t.Debug {
+			log.Printf("Decrypting using EA")
+		}
 		return t.DecryptMessageEA(msg)
 	case TLEP_LEVEL_ECDH_CBES:
+		if t.Debug {
+			log.Printf("Decrypting using CAFEA")
+		}
 		return t.DecryptMessageCAFEA(msg)
 	case TLEP_LEVEL_ECDH_CBES_MKLG:
+		if t.Debug {
+			log.Printf("Decrypting using MESCHA")
+		}
 		return t.DecryptMessageMESCHA(msg)
 	}
 	return nil, gmyerr.WrapPrefix(fmt.Sprintf("TLEP: %d", t.SLLevel), ERROR_UNHANDLED_TLEP_LEVEL)
