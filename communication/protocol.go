@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/gob"
+	"errors"
 
 	"git.qowevisa.me/Qowevisa/gotell/gmyerr"
 )
@@ -156,6 +157,18 @@ func (r *RegisteredUser) GenerateLink(count uint16) (Link, error) {
 	l.UseCount = count
 
 	return l, nil
+}
+
+func IsThisALinkData(data string) (bool, error) {
+	dst := make([]byte, len([]byte(data)))
+	n, err := base32.StdEncoding.Decode(dst, []byte(data))
+	if err != nil {
+		return false, err
+	}
+	if n != LINK_LEN_V1 {
+		return false, errors.New("Link len is not standard")
+	}
+	return true, nil
 }
 
 func (l *Link) Bytes() ([]byte, error) {
