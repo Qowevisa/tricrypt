@@ -23,7 +23,16 @@ cgui:
 	go build -o ./bin/$@ ./cmd/$@
 
 cfyne:
-	go build -v -o ./bin/$@ ./cmd/$@
+	go build -o ./bin/$@ ./cmd/$@
+
+cfyne-win:
+	CGO_ENABLED=1 \
+	CC=x86_64-w64-mingw32-gcc \
+	CXX=x86_64-w64-mingw32-g++ \
+	GOOS=windows \
+	GOARCH=amd64 \
+	go build -v -o ./bin/$@ ./cmd/cfyne
+
 
 gen_test_certs:
 	openssl ecparam -genkey -name prime256v1 -out server.key
